@@ -108,12 +108,16 @@ def process_pending_rewards():
         
     conn.close()
 
-
 # --- МОДЕЛИ ДАННЫХ ---
 class TaskCreate(BaseModel):
     title: str
     reward: int
-    is_habit: bool = False  # По умолчанию галочка выключена
+    is_habit: bool = False
+
+# Вот этого потеряшку мы возвращаем домой:
+class ShopItemCreate(BaseModel):
+    title: str
+    price: int
 
 
 @app.get("/balance")
