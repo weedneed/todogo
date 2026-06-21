@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TODOGO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased pb-32">
+
+    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 opacity-0 pointer-events-none max-w-xs w-full text-center py-2.5 px-4 rounded-2xl shadow-xl font-extrabold text-xs tracking-wide"></div>
+
+    <header class="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 py-3.5 flex justify-between items-center z-40">
+        <h1 class="text-xl font-black tracking-tight bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            TODOGO
+        </h1>
+        <div class="flex items-center bg-amber-50 border border-amber-200/80 px-3 py-1.5 rounded-full">
+            <span class="text-sm mr-1">🪙</span>
+            <span id="balance-display" class="font-black text-amber-600 text-base">...</span>
+        </div>
+    </header>
+
+    <main id="view-tasks" class="max-w-md mx-auto px-4 mt-4 block">
+        <div id="tasks-list" class="space-y-2.5"></div>
+        <div class="h-20"></div> <div class="fixed bottom-16 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-100 p-3 z-30">
+            <form onsubmit="createTask(event)" class="max-w-md mx-auto flex gap-2">
+                <input type="text" id="task-title" required placeholder="Что сделать?..." class="flex-grow bg-slate-100 border-none rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="number" id="task-reward" value="10" min="1" class="w-16 bg-amber-50 text-amber-700 font-black rounded-xl text-center text-sm focus:outline-none">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black px-5 rounded-xl transition-all shadow-md">+</button>
+            </form>
+        </div>
+    </main>
+
+
+    <main id="view-shop" class="max-w-md mx-auto px-4 mt-4 hidden">
+        <h2 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-3 px-1">Витрина наград</h2>
+        <div id="shop-list" class="space-y-3"></div>
+    </main>
+
+
+    <main id="view-admin" class="max-w-md mx-auto px-4 mt-4 hidden space-y-6">
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+            <h2 class="text-xs font-black text-purple-600 uppercase tracking-wider mb-3">Создать новый товар</h2>
+            <form onsubmit="createShopItem(event)" class="flex gap-2">
+                <input type="text" id="shop-title" placeholder="Название награды..." required class="flex-grow bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <input type="number" id="shop-price" placeholder="Цена" value="50" min="1" class="w-20 bg-purple-50 text-purple-700 font-bold rounded-xl text-center text-sm">
+                <button type="submit" class="bg-purple-600 text-white font-black px-4 py-2.5 rounded-xl">+</button>
+            </form>
+        </div>
+
+        <div>
+            <h2 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-3 px-1">Удаление товаров</h2>
+            <div id="admin-shop-list" class="space-y-2"></div>
+        </div>
+    </main>
+
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200/80 h-16 flex justify-around items-center z-40 text-xs font-bold text-slate-400 select-none">
+        <button onclick="switchTab('tasks')" id="tab-tasks" class="flex flex-col items-center w-1/3 py-1 transition-colors text-indigo-600">
+            <span class="text-lg mb-0.5">📝</span>
+            <span>Задачи</span>
+        </button>
+        <button onclick="switchTab('shop')" id="tab-shop" class="flex flex-col items-center w-1/3 py-1 transition-colors">
+            <span class="text-lg mb-0.5">🛒</span>
+            <span>Магазин</span>
+        </button>
+        <button onclick="switchTab('admin')" id="tab-admin" class="flex flex-col items-center w-1/3 py-1 transition-colors">
+            <span class="text-lg mb-0.5">⚙️</span>
+            <span>Админка</span>
+        </button>
+    </nav>
+
+
+    <script>
+        const API = 'http://127.0.0.1:8000';
+        let currentTab = 'tasks';
+
+        // Переключатель вкладок
+        function switchTab(tab) {
+            currentTab = tab;
+            ['tasks', 'shop', 'admin'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab);
+                const btn = document.getElementById(`tab-${t}`);
+                btn.className = `flex flex-col items-center w-1/3 py-1 transition-colors ${t === tab ? 'text-indigo-600 font-black' : 'text-slate-400'}`;
+            });
+            loadData();
+        }
+
+        // Показ всплывающих уведомлений
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.className = `fixed top-16 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 max-w-xs w-full text-center py-2.5 px-4 rounded-2xl shadow-xl font-extrabold text-xs tracking-wide pointer-events-none ${
+                type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-500 text-white'
+            }`;
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 2000);
+        }
+
+        async function updateBalance() {
+            let res = await fetch(`${API}/balance`);
+            let data = await res.json();
+            document.getElementById('balance-display').innerText = data.balance;
+        }
+
+        async function loadData() {
+            updateBalance();
+            if (currentTab === 'tasks') renderTasks();
+            if (currentTab === 'shop') renderShop();
+            if (currentTab === 'admin') renderAdmin();
+        }
+
+        // --- ЗАДАЧИ ---
+        async function renderTasks() {
+            let res = await fetch(`${API}/tasks`);
+            let tasks = await res.json();
+            const list = document.getElementById('tasks-list');
+            list.innerHTML = '';
+
+            if (tasks.length === 0) {
+                list.innerHTML = '<div class="text-center py-12 text-slate-400 text-sm">Список пуст. Создай задачу внизу! 👇</div>';
+                return;
+            }
+
+            tasks.forEach(t => {
+                const div = document.createElement('div');
+                div.className = `p-3.5 rounded-2xl border transition-all flex items-center justify-between ${
+                    t.is_completed ? 'bg-slate-100/80 border-slate-200/60 opacity-50' : 'bg-white border-slate-100 shadow-sm'
+                }`;
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3 pr-2 overflow-hidden flex-grow cursor-pointer" onclick="toggleTask(${t.id})">
+                        <div class="w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                            t.is_completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-slate-50'
+                        }">
+                            ${t.is_completed ? '✓' : ''}
+                        </div>
+                        <span class="text-sm font-medium ${t.is_completed ? 'line-through text-slate-400' : 'text-slate-700'} truncate">
+                            ${t.title}
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-2 flex-shrink-0">
+                        <span class="text-xs font-black px-2 py-0.5 rounded-full ${t.is_completed ? 'bg-slate-200 text-slate-500' : 'bg-amber-100 text-amber-700'}">
+                            +${t.reward}
+                        </span>
+                        <button onclick="deleteTask(${t.id}, event)" class="text-slate-300 hover:text-rose-500 p-1 transition-colors text-base font-bold">
+                            ✕
+                        </button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function createTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('task-title').value.trim();
+            const reward = parseInt(document.getElementById('task-reward').value) || 10;
+            if (!title) return;
+
+            await fetch(`${API}/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, reward })
+            });
+
+            document.getElementById('task-title').value = '';
+            loadData();
+        }
+
+        async function toggleTask(id) {
+            let res = await fetch(`${API}/tasks/${id}/toggle`, { method: 'POST' });
+            let data = await res.json();
+            document.getElementById('balance-display').innerText = data.current_balance;
+            renderTasks();
+        }
+
+        // Удаление задачи (с защитой от двойного клика)
+        async function deleteTask(id, event) {
+            event.stopPropagation(); // ВАЖНО: чтобы клик по крестику не засчитался как выполнение задачи!
+            if (!confirm("Удалить задачу?")) return;
+
+            await fetch(`${API}/tasks/${id}`, { method: 'DELETE' });
+            showToast("Задача удалена", "error");
+            loadData();
+        }
+
+
+        // --- МАГАЗИН ---
+        async function renderShop() {
+            let res = await fetch(`${API}/shop`);
+            let items = await res.json();
+            const list = document.getElementById('shop-list');
+            list.innerHTML = '';
+
+            if (items.length === 0) list.innerHTML = '<div class="text-center py-12 text-slate-400 text-sm">В магазине пусто 🍃</div>';
+
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between";
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-slate-800 text-sm">${item.title}</div>
+                        <div class="text-xs text-amber-600 font-black mt-0.5">${item.price} 🪙</div>
+                    </div>
+                    <button onclick="buyItem(${item.id})" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-black px-4 py-2.5 rounded-xl transition-all shadow-sm">
+                        Купить
+                    </button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function buyItem(id) {
+            let res = await fetch(`${API}/shop/${id}/buy`, { method: 'POST' });
+            let data = await res.json();
+
+            if (res.ok) {
+                document.getElementById('balance-display').innerText = data.new_balance;
+                showToast(`🎉 Куплено: ${data.bought}!`);
+            } else {
+                showToast(data.detail || "Не хватает монет!", "error");
+            }
+        }
+
+
+        // --- АДМИНКА ---
+        async function renderAdmin() {
+            let res = await fetch(`${API}/shop`);
+            let items = await res.json();
+            const list = document.getElementById('admin-shop-list');
+            list.innerHTML = '';
+
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-white rounded-xl border border-slate-100 flex items-center justify-between text-xs";
+                div.innerHTML = `
+                    <span class="font-semibold text-slate-700">${item.title} <b class="text-amber-600">(${item.price} 🪙)</b></span>
+                    <button onclick="deleteShopItem(${item.id})" class="text-rose-500 hover:bg-rose-50 font-bold px-2 py-1 rounded">Удалить</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function createShopItem(e) {
+            e.preventDefault();
+            const title = document.getElementById('shop-title').value.trim();
+            const price = parseInt(document.getElementById('shop-price').value) || 50;
+            if (!title) return;
+
+            await fetch(`${API}/shop`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, price })
+            });
+
+            document.getElementById('shop-title').value = '';
+            showToast("Товар добавлен на витрину!");
+            renderAdmin();
+        }
+
+        async function deleteShopItem(id) {
+            await fetch(`${API}/shop/${id}`, { method: 'DELETE' });
+            showToast("Товар удален", "error");
+            renderAdmin();
+        }
+
+        window.addEventListener('focus', loadData);
+        loadData();
+    </script>
+</body>
+</html>
