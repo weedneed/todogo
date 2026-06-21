@@ -23,10 +23,18 @@
     <main id="view-tasks" class="max-w-md mx-auto px-4 mt-4 block">
         <div id="tasks-list" class="space-y-2.5"></div>
         <div class="h-20"></div> <div class="fixed bottom-16 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-100 p-3 z-30">
-            <form onsubmit="createTask(event)" class="max-w-md mx-auto flex gap-2">
-                <input type="text" id="task-title" required placeholder="Что сделать?..." class="flex-grow bg-slate-100 border-none rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="number" id="task-reward" value="10" min="1" class="w-16 bg-amber-50 text-amber-700 font-black rounded-xl text-center text-sm focus:outline-none">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black px-5 rounded-xl transition-all shadow-md">+</button>
+            <form onsubmit="createTask(event)" class="max-w-md mx-auto flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <input type="text" id="task-title" required placeholder="Что сделать?..." class="flex-grow bg-slate-100 border-none rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" id="task-reward" value="10" min="1" class="w-16 bg-amber-50 text-amber-700 font-black rounded-xl text-center text-sm focus:outline-none">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black px-5 rounded-xl transition-all shadow-md">+</button>
+                </div>
+                <div class="flex items-center gap-2 px-1 py-0.5">
+                    <input type="checkbox" id="task-is-habit" class="w-4 h-4 accent-indigo-600 rounded cursor-pointer">
+                    <label for="task-is-habit" class="text-xs font-bold text-slate-500 select-none cursor-pointer">
+                        🔄 Повторять каждый день (Привычка)
+                    </label>
+                </div>
             </form>
         <div class="flex items-center gap-2 px-1 py-0.5">
     <input type="checkbox" id="task-is-habit" class="w-4 h-4...">
